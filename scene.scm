@@ -18,8 +18,15 @@
 
    draw-geometry
    draw-lightbulbs
+   render-scene
+
+   set-default-material-handler
+   attach-material-handler
+   material-handlers
+
+   attach-entity-handler)
    
-   rotate)
+   ;; rotate)
 (begin
 
    (define resources "resources/Models/FurniturePack/OBJ/")
@@ -40,8 +47,11 @@
 
       "bedDouble" "bathroomMirror"
       "ceilingFan"
-
    ))
+
+   (import (scheme dynamic-bindings))
+   (define material-handlers (make-parameter {}))
+   (define entity-handlers (make-parameter {}))
 
    ; загрузить нужные модели
    (define (prepare-models filename)
@@ -66,7 +76,7 @@
                               (vector
                                  (material 'name)
                                  (material 'kd)
-                                 (string->symbol (material 'map_kd))))
+                                 (material 'map_kd)))
                            mtl)
                         ; objects
                         (map (lambda (object)
@@ -119,156 +129,146 @@
          (list 1 1 1 1))) ; RGBA
    (glBindTexture GL_TEXTURE_2D 0)
 
-   ; compile only geometry, without textures etc.
-   (define (compile-triangles models)
-      (fold (lambda (models model)
+   ; create materials ff
+   ; name -> [name Kd map_Kd]
+   (define (compile-materials models)
+      (fold (lambda (materials model)
          (vector-apply model
             (lambda (mtl objects vertices normals texcoords)
                ; materials list -> materials ff
-               (define materials
-                  (fold (lambda (ff material)
-                           (put ff (string->symbol (ref material 1)) material))
-                     {}
-                     (map (lambda (material)
-                              (define map_kd (ref material 3))
-                              (vector
-                                 (ref material 1)
-                                 (ref material 2)
-                                 (if map_kd
-                                    (begin
-                                       (define id (SOIL_load_OGL_texture (symbol->string map_kd) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0))
-                                       (print id)
-                                       id)
-                                 else
-                                    (car white))))
-                        mtl)))
+               (fold (lambda (ff material)
+                        (put ff (ref material 1) material))
+                  materials
+                  (map (lambda (material)
+                           (define map_kd (ref material 3))
+                           (vector
+                              (string->symbol (ref material 1))
+                              (ref material 2)
+                              (if map_kd
+                                 (SOIL_load_OGL_texture map_kd SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
+                              else
+                                 (car white))))
+                     mtl)))))
+         {}
+         models))
 
-               (glActiveTexture GL_TEXTURE0) ; reset texture unit
+   ; compile only geometry, without textures etc.
+   (define (compile-triangles models)
+      ; name -> [name Kd map_Kd]
+      (define materials (compile-materials models))
+      ; list of model-name -> compiled-geometry-ids in form [gl-list program-id]
+      (define triangles
+      (fold (lambda (models model)
+               (vector-apply model
+                  (lambda (mtl objects vertices normals texcoords)
+                     (glActiveTexture GL_TEXTURE0) ; reset texture unit
 
-               ; compile and put all objects into dictionary
-               (fold (lambda (ff o)
-                        (define name (ref o 1))
-                        (define facegroups (ref o 2))
-                        (define index (glGenLists (length facegroups)))
+                     ; compile and put all objects into dictionary
+                     (fold (lambda (ff o)
+                              (define name (ref o 1))
+                              (define facegroups (ref o 2))
+                              (define index (glGenLists (length facegroups)))
 
-                        (print "compiling model " name "...")
+                              (print "compiling model " name "...")
 
-                        (put ff (string->symbol name)
-                           (reverse
-                           (fold (lambda (o group i)
-                                    (let*((mtl (car group))
-                                          (material (materials (string->symbol mtl))))
-                                       (glNewList i GL_COMPILE)
+                              (put ff (string->symbol name)
+                                 (reverse
+                                 (fold (lambda (o group i)
+                                          (let*((mtl (car group))
+                                                (material (materials (string->symbol mtl))))
+                                             (glNewList i GL_COMPILE)
 
-                                       ; https://compgraphics.info/OpenGL/lighting/materials.php
-                                       ;(glMaterialfv GL_FRONT_AND_BACK GL_AMBIENT_AND_DIFFUSE (ref material 2)) ; diffuse
-                                       (glColor4fv (ref material 2))
-                                       (glBindTexture GL_TEXTURE_2D (ref material 3))
+                                             ; https://compgraphics.info/OpenGL/lighting/materials.php
+                                             ;(glMaterialfv GL_FRONT_AND_BACK GL_AMBIENT_AND_DIFFUSE (ref material 2)) ; diffuse
+                                             (glColor4fv (ref material 2))
+                                             (glBindTexture GL_TEXTURE_2D (ref material 3))
 
-                                       (glBegin GL_TRIANGLES)
-                                       (for-each (lambda (face)
+                                             (glBegin GL_TRIANGLES)
                                              (for-each (lambda (face)
-                                                   (vector-apply face (lambda (xyz uv n)
-                                                      ; wavefront obj uv is [-1..+1], opengl uv - [0 .. +1]
-                                                      (glTexCoord2fv (vector-map (lambda (x) (/ (+ x 1) 2))
-                                                                        (ref texcoords uv)))
-                                                      (glNormal3fv (ref normals n))
-                                                      (glVertex3fv (ref vertices xyz)) )) )
-                                                face))
-                                          (cdr group))
-                                       (glEnd)
-                                       (glEndList)
-                                       (cons i o)))
-                                 #null
-                                 facegroups
-                                 (iota (length facegroups) index)))))
-                  models objects))))
-      {}
-      models))
-
-   ;; (define (compile-model-textured model)
-   ;;    (fold (lambda (models model)
-   ;;       (vector-apply model
-   ;;          (lambda (mtl objects vertices normals texcoords)
-   ;;             ; materials
-   ;;             (define materials
-   ;;                (fold (lambda (ff material)
-   ;;                         (put ff (string->symbol (ref material 1)) material))
-   ;;                   {}
-   ;;                   (map (lambda (material)
-   ;;                            (define map_kd (ref material 3))
-   ;;                            (vector
-   ;;                               (ref material 1)
-   ;;                               (ref material 2)
-   ;;                               (if map_kd (SOIL_load_OGL_texture map_kd SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0))))
-   ;;                      mtl)))
-
-   ;;             (glActiveTexture GL_TEXTURE0) ; reset texture unit
-
-   ;;             ; compile and put all objects into dictionary
-   ;;             (fold (lambda (ff o)
-   ;;                      (define name (ref o 1))
-   ;;                      (define facegroups (ref o 2))
-   ;;                      (define index (glGenLists (length facegroups)))
-
-   ;;                      (print "compiling model " name "...")
-
-   ;;                      (put ff (string->symbol name)
-   ;;                         (reverse
-   ;;                         (fold (lambda (o group i)
-   ;;                                  (let*((mtl (car group))
-   ;;                                        (material (materials (string->symbol mtl))))
-   ;;                                     (glNewList i GL_COMPILE)
-
-   ;;                                     ; https://compgraphics.info/OpenGL/lighting/materials.php
-   ;;                                     ;(glMaterialfv GL_FRONT_AND_BACK GL_AMBIENT_AND_DIFFUSE (ref material 2)) ; diffuse
-   ;;                                     (glColor4fv (ref material 2))
-   ;;                                     (glBindTexture GL_TEXTURE_2D (ref material 3))
-
-   ;;                                     (glBegin GL_TRIANGLES)
-   ;;                                     (for-each (lambda (face)
-   ;;                                           (for-each (lambda (face)
-   ;;                                                 (vector-apply face (lambda (xyz uv n)
-   ;;                                                    ; wavefront obj uv is [-1..+1], opengl uv - [0 .. +1]
-   ;;                                                    (glTexCoord2fv (vector-map (lambda (x) (/ (+ x 1) 2))
-   ;;                                                                      (ref texcoords uv)))
-   ;;                                                    (glNormal3fv (ref normals n))
-   ;;                                                    (glVertex3fv (ref vertices xyz)) )) )
-   ;;                                              face))
-   ;;                                        (cdr group))
-   ;;                                     (glEnd)
-   ;;                                     (glEndList)
-   ;;                                     (cons i o)))
-   ;;                               #null
-   ;;                               facegroups
-   ;;                               (iota (length facegroups) index)))))
-   ;;                models objects))))
-   ;;    {}
-   ;;    models))
+                                                   (for-each (lambda (face)
+                                                         (vector-apply face (lambda (xyz uv n)
+                                                            ; wavefront obj uv is [-1..+1], opengl uv - [0 .. +1]
+                                                            (glTexCoord2fv (vector-map (lambda (x) (/ (+ x 1) 2))
+                                                                              (ref texcoords uv)))
+                                                            (glNormal3fv (ref normals n))
+                                                            (glVertex3fv (ref vertices xyz)) )) )
+                                                      face))
+                                                (cdr group))
+                                             (glEnd)
+                                             (glEndList)
+                                             (cons (cons i material) o)))
+                                       #null
+                                       facegroups
+                                       (iota (length facegroups) index)))))
+                        models objects))))
+         {}
+         models))
+      [materials triangles])
 
    ; ----------------------------
    (define quadric (gluNewQuadric))
 
-   (define (draw-geometry objects models)
-      ;; (define program '(0))
-      ;; (glGetIntegerv GL_CURRENT_PROGRAM program)
-      ;; (define my_WorldMatrix (map inexact (iota 16)))
-      ;; (define my_WorldMatrixLocation (glGetUniformLocation (car program) "my_WorldMatrix"))
+   (define (draw-geometry objects geometry)
+      (define models (ref geometry 2))
 
       (for-each (lambda (entity)
-            (define model (entity 'model))
+            (define name (entity 'name ""))
+            (define object (((entity-handlers) (string->symbol name) I) entity))
 
             (glActiveTexture GL_TEXTURE7) ; temporary buffer for matrix math
             (glMatrixMode GL_TEXTURE)
             (glLoadIdentity) ; let's prepare my_WorldMatrix
-            (let ((xyz (entity 'location)))
+            ; transformations
+            (let ((xyz (object 'location)))
                (glTranslatef (ref xyz 1) (ref xyz 2) (ref xyz 3)))
-            (let ((ypr (entity 'rotation))) ; blender rotation mode is "XYZ": yaw, pitch, roll (рыскание, тангаж, крен)
+            ; blender rotation mode is "YPR": yaw, pitch, roll
+            (let ((ypr (object 'rotation)))
                (glRotatef (ref ypr 3) 0 0 1)
                (glRotatef (ref ypr 2) 0 1 0)
                (glRotatef (ref ypr 1) 1 0 0))
-            (glActiveTexture GL_TEXTURE0) ; reset texture unit to use with
+            ; use program?
+            ; reset texture unit to use with
+            (glActiveTexture GL_TEXTURE0)
+            ; draw compiled geometry
+            (define model (object 'model))
             (for-each glCallList
+               (map car (models (string->symbol model)))))
+         objects))
+
+   (define (render-scene objects geometry)
+      (define models (ref geometry 2))
+
+      (for-each (lambda (entity)
+            (define name (entity 'name ""))
+            (define object (((entity-handlers) (string->symbol name) I) entity))
+
+            (glActiveTexture GL_TEXTURE7) ; temporary buffer for matrix math
+            (glMatrixMode GL_TEXTURE)
+            (glLoadIdentity) ; let's prepare my_WorldMatrix
+            ; transformations
+            (let ((xyz (object 'location)))
+               (glTranslatef (ref xyz 1) (ref xyz 2) (ref xyz 3)))
+            ; blender rotation mode is "YPR": yaw, pitch, roll
+            (let ((ypr (object 'rotation)))
+               (glRotatef (ref ypr 3) 0 0 1)
+               (glRotatef (ref ypr 2) 0 1 0)
+               (glRotatef (ref ypr 1) 1 0 0))
+            ; use program?
+            ; reset texture unit to use with
+            (glActiveTexture GL_TEXTURE0)
+            (define model (object 'model))
+            ; draw compiled geometry
+            (for-each (lambda (item)
+                  (define material (cdr item))
+                  (define handlers (material-handlers))
+                  ; do material handler
+                  (define handler
+                     (handlers (ref material 1) (handlers #false (lambda (material)
+                        #false)))) ; do nothing
+                  (handler material)
+
+                  ; draw compiled geometry
+                  (glCallList (car item)))
                (models (string->symbol model))))
          objects))
 
@@ -283,8 +283,8 @@
                (glColor3fv (light 'color))
                (glPushMatrix)
                (glTranslatef (ref (light 'position) 1)
-                           (ref (light 'position) 2)
-                           (ref (light 'position) 3))
+                             (ref (light 'position) 2)
+                             (ref (light 'position) 3))
                (gluSphere quadric 0.2 16 8)
                (glPopMatrix)))
          Lights
@@ -296,22 +296,26 @@
       else
          (error "Unable to load: " path)))
 
-   (define (rotate model delta)
-      ;; rotate ceilingFan
-      (define rotation ((model) 'rotation))
-      (model
-         (put (model) 'rotation
-            (let ((z (ref rotation 3)))
-               (set-ref rotation 3 (+ z delta))))))
+   ;; (define (rotate model delta)
+   ;;    ;; rotate ceilingFan
+   ;;    (define rotation ((model) 'rotation))
+   ;;    (model
+   ;;       (put (model) 'rotation
+   ;;          (let ((z (ref rotation 3)))
+   ;;             (set-ref rotation 3 (+ z delta))))))
 
    ; materials
-   (define (attach-material-handler material handler)
-      ; if no material, then this should be default material handler
-      ; this handler should do "glUseProgram ...", "set parameters", "etc."
-      #true
-   )
    (define (set-default-material-handler handler)
-      #true
-   )
+      (define handlers (material-handlers))
+      (material-handlers (put handlers #false handler)))
 
+   (define (attach-material-handler materials handler)
+      (for-each (lambda (material)
+            (define handlers (material-handlers))
+            (material-handlers (put handlers (string->symbol material) handler)))
+         (if (list? materials) materials (list materials))))
+
+   (define (attach-entity-handler entity handler)
+      (define handlers (entity-handlers))
+      (entity-handlers (put handlers (string->symbol entity) handler)))
 ))

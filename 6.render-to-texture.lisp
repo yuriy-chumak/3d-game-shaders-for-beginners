@@ -30,16 +30,18 @@
 (define Objects (vector->list (scene 'Objects)))
 (print "Objects: " Objects)
 
-; rotating ceiling fan
-(define (ceilingFan? entity) (string-eq? (entity 'name "") "ceilingFan"))
-(define ceilingFan (make-parameter (car (keep ceilingFan? Objects))))
-(define Objects (remove ceilingFan? Objects))
+; let's rotate ceilingFan
+(attach-entity-handler "ceilingFan" (lambda (entity)
+   (define-values (ss ms) (clock))
+   (ff-replace entity {
+      'rotation [0 0 (+ (mod (* ss 10) 360) (/ ms 100))]
+   })))
 
-; just apply texture program
+; just apply texture
 (define draw-texture (gl:create-program
 "#version 120 // OpenGL 2.1
    void main() {
-      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+      gl_Position = ftransform();
       gl_TexCoord[0] = gl_MultiTexCoord0;
    }"
 "#version 120 // OpenGL 2.1
@@ -84,19 +86,23 @@
 ; normals producer shader program
 (define normals (gl:create-program
 "#version 120 // OpenGL 2.1
-   #define gl_ModelMatrix gl_TextureMatrix[7] //project specific model matrix
-   #define gl_WorldViewProjectionMatrix gl_ModelViewProjectionMatrix
+   #define gl_ModelMatrix gl_TextureMatrix[7] // our model matrix
+   #define gl_ViewProjectionMatrix gl_ModelViewProjectionMatrix
 
    varying vec3 normal;
    void main() {
-      gl_Position = gl_WorldViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
-      normal = gl_Normal * 0.5 + vec3(0.5, 0.5, 0.5);
+      gl_Position = gl_ViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
+      normal = mat3(gl_NormalMatrix) * mat3(gl_ModelMatrix) * gl_Normal;
    }"
 "#version 120 // OpenGL 2.1
    varying vec3 normal;
    void main() {
-      gl_FragColor = vec4(normalize(normal), 1.0);
+      gl_FragColor = vec4(normalize(normal * 0.5 + vec3(0.5, 0.5, 0.5)), 1.0);
    }"))
+
+;(set-default-material-handler (lambda (material)
+;   (glUseProgram normals)
+;))
 
 ; draw
 (gl:set-renderer (lambda ()
@@ -106,10 +112,7 @@
    (glClearColor 0 0 0 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
-   ;; rotate ceilingFan
-   (rotate ceilingFan 0.1)
-
-   (glUseProgram normals)
+;   (glUseProgram normals)
 
    ; camera setup
    (begin
@@ -131,11 +134,13 @@
       (apply gluLookAt (append location target up)))
 
    ; draw a geometry with colors
-   (draw-geometry (cons (ceilingFan) Objects) geometry)
+   (glUseProgram normals)
+   (draw-geometry Objects geometry)
 
    ; Draw a light bulbs
    (draw-lightbulbs Lights)
 
+   ; ----------------------------------
    ; Draw a result texture (normals)
    (glBindFramebuffer GL_FRAMEBUFFER 0)
    (glUseProgram draw-texture)

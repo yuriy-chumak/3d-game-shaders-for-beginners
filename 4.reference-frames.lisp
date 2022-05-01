@@ -9,7 +9,7 @@
 (glShadeModel GL_SMOOTH)
 (glEnable GL_DEPTH_TEST)
 
-(glEnable GL_CULL_FACE) ; GL_BACK
+(glEnable GL_CULL_FACE); GL_BACK
 
 ; scene
 (import (scene))
@@ -30,11 +30,6 @@
 (define Objects (vector->list (scene 'Objects)))
 (print "Objects: " Objects)
 
-; rotating ceiling fan
-(define (ceilingFan? entity) (string-eq? (entity 'name "") "ceilingFan"))
-(define ceilingFan (make-parameter (car (keep ceilingFan? Objects))))
-(define Objects (remove ceilingFan? Objects))
-
 ; lights init
 (glEnable GL_COLOR_MATERIAL)
 (glLightModelfv GL_LIGHT_MODEL_AMBIENT '(0.1 0.1 0.1 1))
@@ -51,10 +46,7 @@
    (glClearColor 0.1 0.1 0.1 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
-   ;; rotate ceilingFan
-   (rotate ceilingFan 0.1)
-
-   ; Lights
+   ; lights
    (glEnable GL_LIGHTING)
    (for-each (lambda (light i)
          (glEnable (+ GL_LIGHT0 i))
@@ -81,26 +73,34 @@
       (glLoadIdentity)
       (apply gluLookAt (append location target up)))
 
-   ; draw a geometry with colors
+   ; draw the geometry with colors
    (glEnable GL_TEXTURE_2D)
-   (for-each (lambda (entity)
-         (define model (entity 'model))
+   (define models (ref geometry 2))
+   (for-each (lambda (object)
+         (define model (object 'model))
+
+         (define location (object 'location))
+         ; let's rotate ceilingFan
+         (define rotation (if (string-eq? (object 'name "") "ceilingFan")
+            (let*((ss ms (clock)))
+               [0 0 (+ (mod (* ss 10) 360) (/ ms 100))])
+            (object 'rotation)))
 
          (glMatrixMode GL_MODELVIEW)
          (glPushMatrix)
          ; transformations
-         (let ((xyz (entity 'location)))
+         (let ((xyz location))
             (glTranslatef (ref xyz 1) (ref xyz 2) (ref xyz 3)))
-         ;  blender rotation mode is "XYZ": yaw, pitch, roll
-         (let ((ypr (entity 'rotation)))
-            (glRotatef (ref ypr 1) 1 0 0)
+         ; blender rotation mode is "YPR": yaw, pitch, roll
+         (let ((ypr rotation))
+            (glRotatef (ref ypr 3) 0 0 1)
             (glRotatef (ref ypr 2) 0 1 0)
-            (glRotatef (ref ypr 3) 0 0 1))
+            (glRotatef (ref ypr 1) 1 0 0))
          ; precompiled geometry
          (for-each glCallList
-            (geometry (string->symbol model)))
+            (map car (models (string->symbol model))))
          (glPopMatrix))
-      (cons (ceilingFan) Objects))
+      Objects)
 
    ; Draw a light bulbs
    (glMatrixMode GL_MODELVIEW)

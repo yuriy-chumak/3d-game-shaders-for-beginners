@@ -30,6 +30,13 @@
 (define Objects (vector->list (scene 'Objects)))
 (print "Objects: " Objects)
 
+; let's rotate ceilingFan
+(attach-entity-handler "ceilingFan" (lambda (entity)
+   (define-values (ss ms) (clock))
+   (ff-replace entity {
+      'rotation [0 0 (+ (mod (* ss 10) 360) (/ ms 100))]
+   })))
+
 ; We are moving away from the fixed OpenGL pipeline, in which
 ; Model and View matrices are combined into one.
 ; As a Model matrix we will use gl_TextureMatrix[7].
@@ -49,12 +56,32 @@
       gl_FragColor = gl_Color;
    }"))
 
+(set-default-material-handler (lambda (material)
+   (glUseProgram colorize)
+))
+
+(define greenify (gl:create-program
+"#version 120 // OpenGL 2.1
+   #define gl_ModelMatrix gl_TextureMatrix[7] // our model matrix
+   #define gl_ViewProjectionMatrix gl_ModelViewProjectionMatrix
+
+   void main() {
+      gl_Position = gl_ViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
+   }"
+"#version 120 // OpenGL 2.1
+   void main() {
+      gl_FragColor = vec4(0,1,0,1);
+   }"))
+
+(attach-material-handler '("metalLight.009" "lamp.005" "wood.074")
+   (lambda (material)
+      (glUseProgram greenify)
+))
+
 ; draw
 (gl:set-renderer (lambda ()
    (glClearColor 0.1 0.1 0.1 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
-
-   (glUseProgram colorize)
 
    ; camera setup
    (begin
@@ -76,32 +103,7 @@
       (apply gluLookAt (append location target up)))
 
    ; draw the geometry with colors
-   (define models (ref geometry 2))
-   (for-each (lambda (object)
-         (define model (object 'model))
-
-         (define location (object 'location))
-         ; let's rotate ceilingFan
-         (define rotation (if (string-eq? (object 'name "") "ceilingFan")
-            (let*((ss ms (clock)))
-               [0 0 (+ (mod (* ss 10) 360) (/ ms 100))])
-            (object 'rotation)))
-
-         (glActiveTexture GL_TEXTURE7)  ; my_ModelMatrix
-         (glMatrixMode GL_TEXTURE)
-         (glLoadIdentity) ; let's prepare my_ModelMatrix
-         ; transformations
-         (let ((xyz location))
-            (glTranslatef (ref xyz 1) (ref xyz 2) (ref xyz 3)))
-         ; blender rotation mode is "YPR": yaw, pitch, roll
-         (let ((ypr rotation))
-            (glRotatef (ref ypr 3) 0 0 1)
-            (glRotatef (ref ypr 2) 0 1 0)
-            (glRotatef (ref ypr 1) 1 0 0))
-         ; precompiled geometry
-         (for-each glCallList
-            (map car (models (string->symbol model)))))
-      Objects)
+   (render-scene Objects geometry)
 
    ; Draw a light bulbs
    (draw-lightbulbs Lights)
