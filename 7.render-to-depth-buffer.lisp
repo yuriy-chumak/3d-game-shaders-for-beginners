@@ -24,6 +24,13 @@
 (define Objects (scene 'Objects))
 (print "Objects: " Objects)
 
+; let's rotate ceilingFan
+(attach-entity-handler "ceilingFan" (lambda (entity)
+   (define-values (ss ms) (clock))
+   (ff-replace entity {
+      'rotation [0 0 (+ (mod (* ss 10) 360) (/ ms 100))]
+   })))
+
 ; simply draw a 2d texture shader
 (define texture2d (gl:create-program
 "#version 120 // OpenGL 2.1
@@ -267,7 +274,7 @@ GL_TRIANGLES GL_TRIANGLE_STRIP 18
    ; -----------------------------------------------------------
    ; render lightbulb depth buffer
    (let*((ss ms (clock))
-         (ticks (/ (+ ss (/ ms 1000)) 1)))
+         (ticks (* (+ ss (/ ms 1000)) 3)))
 
    (define light {
       'type "POINT"
@@ -275,7 +282,7 @@ GL_TRIANGLES GL_TRIANGLE_STRIP 18
       'position [
          (* 5 (sin (/ ticks 20)))
          (* 5 (cos (/ ticks 20)))
-         1
+         4
          1] ; 1 for POINT light
    })
 

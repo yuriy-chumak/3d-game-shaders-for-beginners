@@ -5,6 +5,7 @@
    (file wavefront obj)
    (file wavefront mtl)
    (otus blobs)
+   (otus case-apply)
    (OpenGL version-2-1)
    (lib soil))
 
@@ -18,6 +19,7 @@
 
    draw-geometry
    draw-lightbulbs
+   ; render scene with binded textures
    render-scene
 
    set-default-material-handler
@@ -213,7 +215,7 @@
 
       (for-each (lambda (entity)
             (define name (entity 'name ""))
-            (define object (((entity-handlers) (string->symbol name) I) entity))
+            (define object (((entity-handlers) (string->symbol name) idf) entity))
 
             (glActiveTexture GL_TEXTURE7) ; temporary buffer for matrix math
             (glMatrixMode GL_TEXTURE)
@@ -240,7 +242,7 @@
 
       (for-each (lambda (entity)
             (define name (entity 'name ""))
-            (define object (((entity-handlers) (string->symbol name) I) entity))
+            (define object (((entity-handlers) (string->symbol name) idf) entity))
 
             (glActiveTexture GL_TEXTURE7) ; temporary buffer for matrix math
             (glMatrixMode GL_TEXTURE)
@@ -265,7 +267,10 @@
                   (define handler
                      (handlers (ref material 1) (handlers #false (lambda (material)
                         #false)))) ; do nothing
-                  (handler material)
+                  (case-apply handler
+                     (list 0)
+                     (list 1 material)
+                     (list 2 material object))
 
                   ; draw compiled geometry
                   (glCallList (car item)))

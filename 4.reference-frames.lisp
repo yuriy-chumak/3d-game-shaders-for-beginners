@@ -2,14 +2,13 @@
 
 ; initialize OpenGL
 (import (lib gl-2))
-(gl:set-window-title "4.reference-frames.lisp")
-(import (scheme dynamic-bindings))
+(gl:set-window-title "reference-frames.lisp")
 
-; gl global init
+; global init
 (glShadeModel GL_SMOOTH)
 (glEnable GL_DEPTH_TEST)
 
-(glEnable GL_CULL_FACE); GL_BACK
+(glEnable GL_CULL_FACE)
 
 ; scene
 (import (scene))

@@ -2,8 +2,7 @@
 
 ; initialize OpenGL
 (import (lib gl-2))
-(gl:set-window-title "6.render-to-texture.lisp")
-(import (scheme dynamic-bindings))
+(gl:set-window-title "render-to-texture.lisp")
 
 ; gl global init
 (glShadeModel GL_SMOOTH)
@@ -37,23 +36,10 @@
       'rotation [0 0 (+ (mod (* ss 10) 360) (/ ms 100))]
    })))
 
-; just apply texture
-(define draw-texture (gl:create-program
-"#version 120 // OpenGL 2.1
-   void main() {
-      gl_Position = ftransform();
-      gl_TexCoord[0] = gl_MultiTexCoord0;
-   }"
-"#version 120 // OpenGL 2.1
-   uniform sampler2D tex0;
-   void main() {
-      gl_FragColor = texture2D(tex0, gl_TexCoord[0].st);
-   }"))
-
-
 ;; render buffer
 (import (OpenGL EXT framebuffer_object))
 
+; texture buffer sizes
 (define TEXW 1024)
 (define TEXH 1024)
 
@@ -68,14 +54,14 @@
 (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
 (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA TEXW TEXH 0 GL_RGBA GL_UNSIGNED_BYTE 0)
 (glBindTexture GL_TEXTURE_2D 0)
-
+; framebuffer
 (define framebuffer '(0))
 (glGenFramebuffers (length framebuffer) framebuffer)
 (print "framebuffer: " framebuffer)
 (glBindFramebuffer GL_FRAMEBUFFER (car framebuffer))
 (glFramebufferTexture2D GL_FRAMEBUFFER GL_COLOR_ATTACHMENT0 GL_TEXTURE_2D (car texture) 0)
-
-; we have to create hardware depth buffer if we want to use a depth
+; depthbuffer
+;  we have to create hardware depth buffer if we want to use a depth
 (define depthrenderbuffer '(0))
 (glGenRenderbuffers (length depthrenderbuffer) depthrenderbuffer)
 (glBindRenderbuffer GL_RENDERBUFFER (car depthrenderbuffer))
@@ -83,7 +69,7 @@
 (glFramebufferRenderbuffer GL_FRAMEBUFFER GL_DEPTH_ATTACHMENT GL_RENDERBUFFER (car depthrenderbuffer))
 (glBindFramebuffer GL_FRAMEBUFFER 0)
 
-; normals producer shader program
+; normals producer
 (define normals (gl:create-program
 "#version 120 // OpenGL 2.1
    #define gl_ModelMatrix gl_TextureMatrix[7] // our model matrix
@@ -100,10 +86,6 @@
       gl_FragColor = vec4(normalize(normal * 0.5 + vec3(0.5, 0.5, 0.5)), 1.0);
    }"))
 
-;(set-default-material-handler (lambda (material)
-;   (glUseProgram normals)
-;))
-
 ; draw
 (gl:set-renderer (lambda ()
    (glViewport 0 0 TEXW TEXH)
@@ -111,8 +93,6 @@
 
    (glClearColor 0 0 0 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
-
-;   (glUseProgram normals)
 
    ; camera setup
    (begin
@@ -133,8 +113,9 @@
       (glLoadIdentity)
       (apply gluLookAt (append location target up)))
 
-   ; draw a geometry with colors
    (glUseProgram normals)
+
+   ; draw a geometry with colors, not a full geometry with textures
    (draw-geometry Objects geometry)
 
    ; Draw a light bulbs
@@ -143,7 +124,7 @@
    ; ----------------------------------
    ; Draw a result texture (normals)
    (glBindFramebuffer GL_FRAMEBUFFER 0)
-   (glUseProgram draw-texture)
+   (glUseProgram 0)
 
    (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
    (glClearColor 0 0 0 1)

@@ -18,7 +18,7 @@ Below is a collection of shading techniques that will take your game visuals to 
 I've explained each technique in such a way that you can take what you learn here and apply/port it to
 whatever stack you use be it Godot, Unity, Unreal, or something else.
 For the glue in between the shaders,
-I've chosen the fabulous ~~Panda3D game engine~~ Otus Lisp and the OpenGL Shading Language (GLSL).
+I've chosen the fabulous ~~Panda3D game engine~~ Otus Lisp, OpenGL and the OpenGL Shading Language (GLSL).
 So if that is your stack, then you'll also get the benefit of learning how to use these
 shading techniques with ~~Panda3D~~ Ol and OpenGL specifically."*
 
@@ -26,22 +26,22 @@ shading techniques with ~~Panda3D~~ Ol and OpenGL specifically."*
 
 ## Table Of Contents
 
-- :heavy_check_mark: 1. [Setup](sections/1.setup.md)
+- :heavy_check_mark: [Setup](sections/1.setup.md)
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/setup.md))
-- :heavy_check_mark: 2. [Dependencies](sections/2.dependencies.md)
+- :heavy_check_mark: [Dependencies](sections/2.dependencies.md)
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/building-the-demo.md))
-- :heavy_check_mark: 3. [Running The Demo](sections/3.running-the-demo.md)
+- :heavy_check_mark: [Running The Demo](sections/3.running-the-demo.md)
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/running-the-demo.md))
-  - 3.1 [Changing The Scene](sections/3.1.changing-the-scene.md)
 
-- :heavy_check_mark: 4. [Reference Frames](sections/4.reference-frames.md)
+- :heavy_check_mark: [Reference Frames](sections/4.reference-frames.md)
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/reference-frames.md))
-- :heavy_check_mark: 5. [GLSL](sections/5.glsl.md)
+- :heavy_check_mark: [GLSL](sections/5.glsl.md)
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/glsl.md))
-- :heavy_check_mark: 6. [Render To Texture](sections/6.render-to-texture.md)
+- :heavy_check_mark: [Texturing](sections/5.glsl-texturing.md)
+    ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/texturing.md))
+- :heavy_check_mark: [Render To Texture](sections/6.render-to-texture.md)
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/render-to-texture.md))
 
-- :heavy_check_mark: [Texturing](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/texturing.md)
 - :heavy_check_mark: [Lighting](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/lighting.md)
 
 - :heavy_multiplication_x: [Blinn-Phong](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/blinn-phong.md)

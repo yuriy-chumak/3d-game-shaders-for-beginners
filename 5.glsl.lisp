@@ -2,14 +2,13 @@
 
 ; initialize OpenGL
 (import (lib gl-2))
-(gl:set-window-title "5.glsl.lisp")
-(import (scheme dynamic-bindings))
+(gl:set-window-title "glsl.lisp")
 
 ; gl global init
 (glShadeModel GL_SMOOTH)
 (glEnable GL_DEPTH_TEST)
 
-(glEnable GL_CULL_FACE); GL_BACK
+(glEnable GL_CULL_FACE)
 
 ; scene
 (import (scene))
@@ -37,7 +36,7 @@
 ; simple glsl shader program (greenify)
 (define colorize (gl:create-program
 "#version 120 // OpenGL 2.1
-   #define gl_ModelMatrix gl_TextureMatrix[7] // our model matrix
+   #define gl_ModelMatrix gl_TextureMatrix[7]   // Model matrix
    #define gl_ViewProjectionMatrix gl_ModelViewProjectionMatrix
 
    void main() {
@@ -53,8 +52,6 @@
 (gl:set-renderer (lambda ()
    (glClearColor 0.1 0.1 0.1 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
-
-   (glUseProgram colorize)
 
    ; camera setup
    (begin
@@ -76,6 +73,8 @@
       (apply gluLookAt (append location target up)))
 
    ; draw the geometry with colors
+   (glUseProgram colorize)
+
    (define models (ref geometry 2))
    (for-each (lambda (object)
          (define model (object 'model))

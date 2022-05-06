@@ -1,5 +1,7 @@
 #version 120 // OpenGL 2.1
 
+uniform int lightsCount;
+
 varying vec4 vertexPosition;
 varying vec4 vertexNormal;
 
@@ -18,7 +20,7 @@ void main() {
 
 	// 1 - POINT
 	// 2 - SUN
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < lightsCount; i++) {
 		vec4 lightPosition = /*gl_ModelViewMatrixInverse **/gl_LightSource[i].position; // gl_LightSource already multiplied by gl_ModelViewMatrix
 		vec3 lightDirection = lightPosition.xyz - vertex * lightPosition.w;
 

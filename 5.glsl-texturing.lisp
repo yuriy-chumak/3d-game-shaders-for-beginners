@@ -2,7 +2,8 @@
 
 ; initialize OpenGL
 (import (lib gl-2))
-(gl:set-window-title "glsl-per-material.lisp")
+(gl:set-window-title "glsl.lisp")
+(import (scheme dynamic-bindings))
 
 ; gl global init
 (glShadeModel GL_SMOOTH)
@@ -49,63 +50,21 @@
    void main() {
       gl_Position = gl_ViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
       gl_FrontColor = gl_Color;
+      gl_TexCoord[0] = gl_MultiTexCoord0;
    }"
 "#version 120 // OpenGL 2.1
+   uniform sampler2D tex;
    void main() {
-      gl_FragColor = gl_Color;
+      gl_FragColor = gl_Color * texture2D(tex, gl_TexCoord[0].st);
    }"))
 
 (set-default-material-handler (lambda (material)
-   (glUseProgram colorize)
-))
+   (define program '(0)) ; speedup
+   (glGetIntegerv GL_CURRENT_PROGRAM program)
 
-(define greenify (gl:create-program
-"#version 120 // OpenGL 2.1
-   #define gl_ModelMatrix gl_TextureMatrix[7] // our model matrix
-   #define gl_ViewProjectionMatrix gl_ModelViewProjectionMatrix
-
-   void main() {
-      gl_Position = gl_ViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
-   }"
-"#version 120 // OpenGL 2.1
-   void main() {
-      gl_FragColor = vec4(0,1,0,1);
-   }"))
-
-(attach-material-handler '("metalLight.009" "lamp.005" "wood.074")
-   (lambda (material)
-      (glUseProgram greenify)
-))
-
-(import (scheme inexact))
-(import (otus random!))
-(define blinker (gl:create-program
-"#version 120 // OpenGL 2.1
-   #define gl_ModelMatrix gl_TextureMatrix[7] // our model matrix
-   #define gl_ViewProjectionMatrix gl_ModelViewProjectionMatrix
-
-   void main() {
-      gl_Position = gl_ViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
-      gl_FrontColor = gl_Color;
-   }"
-"#version 120 // OpenGL 2.1
-   uniform float brightness;
-   void main() {
-      gl_FragColor = gl_Color * vec4(brightness,brightness,brightness,1);
-   }"))
-
-(attach-material-handler '("metal.022")
-   (lambda (material entity)
-      (define ddx (if (string-eq? (entity 'name "") "laptop") 237 311))
-      (define ddy (if (string-eq? (entity 'name "") "laptop") 111 556))
-
-      (define-values (ss ms) (clock))
-      (glUseProgram blinker)
-      (glUniform1f (glGetUniformLocation blinker "brightness")
-         (+ 0.6
-            (* (sin (/ ms ddx)) (sin (/ ms ddx))
-               (cos (/ ms ddy))
-               0.2)))
+   (unless (eq? (car program) colorize)
+      (glUseProgram colorize)
+      (glUniform1i (glGetUniformLocation colorize "tex") 0))
 ))
 
 ; draw
