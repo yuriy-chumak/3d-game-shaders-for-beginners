@@ -3,6 +3,7 @@
 ; initialize OpenGL
 (import (lib gl-2))
 (gl:set-window-title "reference-frames.lisp")
+(import (scheme inexact))
 
 ; global init
 (glShadeModel GL_SMOOTH)
@@ -32,10 +33,6 @@
 ; lights init
 (glEnable GL_COLOR_MATERIAL)
 (glLightModelfv GL_LIGHT_MODEL_AMBIENT '(0.1 0.1 0.1 1))
-; set lights specular colors
-(for-each (lambda (i)
-      (glEnable (+ GL_LIGHT0 i)))
-   (iota (length Lights)))
 
 (glPolygonMode GL_FRONT_AND_BACK GL_FILL)
 (define quadric (gluNewQuadric))
@@ -45,13 +42,28 @@
    (glClearColor 0.1 0.1 0.1 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
+   ; let's add one dynamic light
+   (define-values (ss ms) (clock))
+   (define ticks (/ (+ ss (/ ms 1000)) 0.1))
+
+   (define lights (append Lights (list
+      {
+         'type "POINT"
+         'color [1 0 0]
+         'position [
+            (* 5 (sin (/ ticks 20)))
+            (* 5 (cos (/ ticks 20)))
+            4
+            1]
+      })))
+
    ; lights
    (glEnable GL_LIGHTING)
    (for-each (lambda (light i)
          (glEnable (+ GL_LIGHT0 i))
          (glLightfv (+ GL_LIGHT0 i) GL_POSITION (light 'position)))
-      Lights
-      (iota (length Lights)))
+      lights
+      (iota (length lights)))
 
    ; camera setup
    (begin
@@ -114,6 +126,6 @@
                           (ref (light 'position) 3))
             (gluSphere quadric 0.2 32 10)
             (glPopMatrix)))
-      Lights
-      (iota (length Lights)))
+      lights
+      (iota (length lights)))
 ))

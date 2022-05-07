@@ -290,7 +290,7 @@
                (glTranslatef (ref (light 'position) 1)
                              (ref (light 'position) 2)
                              (ref (light 'position) 3))
-               (gluSphere quadric 0.2 16 8)
+               (gluSphere quadric 0.2 8 8)
                (glPopMatrix)))
          Lights
          (iota (length Lights))))
