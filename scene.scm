@@ -7,17 +7,15 @@
    (otus blobs)
    (otus case-apply)
    (OpenGL version-2-1)
-   (lib soil))
+   (lib soil) (lib GLU))
 
 (export
-   file->string
    prepare-models
    compile-triangles
-   extract-model
 
    ;load-texures
 
-   draw-geometry
+   draw-geometry ; draw just a geometry
    draw-lightbulbs
    ; render scene with binded textures
    render-scene
@@ -31,25 +29,22 @@
    ;; rotate)
 (begin
 
-   (define resources "resources/Models/FurniturePack/OBJ/")
-   (define filenames (list ; a list of used models from resources folder
-      ; bridges
-      "deskCorner"
-      "floorFull" "paneling"
-      "wall"
+   (define resources '(
+      "resources/Ultimate Modular Sci-Fi - Feb 2021/OBJ"))
 
-      ; workplace
-      "laptop" "computerScreen"
-      "computerKeyboard" "computerMouse"
-      "chairDesk"
-      "tableCross" "tableCoffee"
-
-      "cabinetTelevision" "cabinetTelevisionDoors"
-      "kitchenCabinetUpperCorner"
-
-      "bedDouble" "bathroomMirror"
-      "ceilingFan"
-   ))
+   (import (srfi 170)) ; folder functions
+   (define filenames ; a list of used models from resources folder
+      (fold (lambda (names resource)
+               (define dir (open-directory resource))
+               (let loop ((names names))
+                  (define filename (read-directory dir))
+                  (if filename
+                     (loop (if (m/\.obj$/ filename) (cons (string-append resource "/" filename) names) names))
+                  else
+                     (close-directory dir)
+                     names)))
+         '()
+         resources))
 
    (import (scheme dynamic-bindings))
    (define material-handlers (make-parameter {}))
@@ -60,11 +55,11 @@
       (or ;load a precompiled models file or compile new one
          (fasl-load filename #false)
          (let ((models (fold (lambda (models filename)
-                  (define obj-filename (string-append resources filename ".obj"))
+                  (define obj-filename filename)
                   (print "Loading object file " obj-filename "...")
                   (define obj (parse wavefront-obj-parser (file->bytestream obj-filename) obj-filename #t #empty))
                   ; Load a materials
-                  (define mtl-filename (string-append resources (obj 'mtllib "")))
+                  (define mtl-filename (s/\.obj/\.mtl/ filename)) ;; (obj 'mtllib "")
                   (print "Loading materials file " mtl-filename "...")
                   (define mtl (parse wavefront-mtl-parser (file->bytestream mtl-filename) mtl-filename #t #empty))
 
@@ -94,13 +89,6 @@
                filenames)))
             (fasl-save models filename)
             models)))
-
-   ; ???
-   (define (extract-model models name)
-      (define (? entity) (string-eq? (entity 'name "") name))
-      (values
-         (keep ? models)
-         (remove ? models)))
 
    ;; ; тут мы загружаем текстуры в GPU и возвращаем их { текстура . id }
    ;; (define (load-texures models)
@@ -147,9 +135,9 @@
                               (string->symbol (ref material 1))
                               (ref material 2)
                               (if map_kd
-                                 (SOIL_load_OGL_texture map_kd SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
-                              else
-                                 (car white))))
+                                 (SOIL_load_OGL_texture map_kd SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0) )))
+                              ;else
+                              ;   (car white))))
                      mtl)))))
          {}
          models))
@@ -177,24 +165,27 @@
                                  (reverse
                                  (fold (lambda (o group i)
                                           (let*((mtl (car group))
-                                                (material (materials (string->symbol mtl))))
+                                                (material (materials (string->symbol mtl)))
+                                                (texture (ref material 3)))
                                              (glNewList i GL_COMPILE)
 
                                              ; https://compgraphics.info/OpenGL/lighting/materials.php
                                              ;(glMaterialfv GL_FRONT_AND_BACK GL_AMBIENT_AND_DIFFUSE (ref material 2)) ; diffuse
                                              (glColor4fv (ref material 2))
-                                             (glBindTexture GL_TEXTURE_2D (ref material 3))
+                                             (if texture
+                                                (glBindTexture GL_TEXTURE_2D texture))
 
                                              (glBegin GL_TRIANGLES)
-                                             (for-each (lambda (face)
+                                             (for-each (lambda (faces)
                                                    (for-each (lambda (face)
                                                          (vector-apply face (lambda (xyz uv n)
-                                                            ; wavefront obj uv is [-1..+1], opengl uv - [0 .. +1]
-                                                            (glTexCoord2fv (vector-map (lambda (x) (/ (+ x 1) 2))
-                                                                              (ref texcoords uv)))
+                                                            (if uv
+                                                               ; wavefront obj uv is [-1..+1], opengl uv - [0 .. +1]
+                                                               (glTexCoord2fv (vector-map (lambda (x) (/ (+ x 1) 2))
+                                                                                 (ref texcoords uv))))
                                                             (glNormal3fv (ref normals n))
-                                                            (glVertex3fv (ref vertices xyz)) )) )
-                                                      face))
+                                                            (glVertex3fv (ref vertices xyz)) )))
+                                                      faces))
                                                 (cdr group))
                                              (glEnd)
                                              (glEndList)
@@ -294,12 +285,6 @@
                (glPopMatrix)))
          Lights
          (iota (length Lights))))
-
-   (define (file->string path)
-      (define vec (file->bytestream path))
-      (if vec (bytes->string vec)
-      else
-         (error "Unable to load: " path)))
 
    ;; (define (rotate model delta)
    ;;    ;; rotate ceilingFan

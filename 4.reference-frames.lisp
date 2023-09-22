@@ -1,15 +1,16 @@
 #!/usr/bin/env ol
 
 ; initialize OpenGL
-(import (lib gl-2))
+(import (lib gl-1))
 (gl:set-window-title "reference-frames.lisp")
+
 (import (scheme inexact))
+(import (lib GLU))
 
-; global init
-(glShadeModel GL_SMOOTH)
+; global GL init
 (glEnable GL_DEPTH_TEST)
-
 (glEnable GL_CULL_FACE)
+(glShadeModel GL_SMOOTH)
 
 ; scene
 (import (scene))
@@ -18,17 +19,19 @@
 (define models (prepare-models "cache.bin"))
 (define geometry (compile-triangles models))
 
+; ------------------------------------------
 ; load a scene
 (import (file json))
 (define scene (read-json-file "scene.json"))
 
 ; scene lights
 (define Lights (vector->list (scene 'Lights)))
-(print "Lights: " Lights)
+(print "Lights:")
+(for-each (lambda (x) (print "   " x)) Lights)
 
 ; scene objects
-(define Objects (vector->list (scene 'Objects)))
-(print "Objects: " Objects)
+(define Objects
+   (vector->list (scene 'Objects)))
 
 ; lights init
 (glEnable GL_COLOR_MATERIAL)
@@ -85,7 +88,7 @@
       (apply gluLookAt (append location target up)))
 
    ; draw the geometry with colors
-   (glEnable GL_TEXTURE_2D)
+   ; (glEnable GL_TEXTURE_2D) ; no textures in our scene (yet)
    (define models (ref geometry 2))
    (for-each (lambda (object)
          (define model (object 'model))

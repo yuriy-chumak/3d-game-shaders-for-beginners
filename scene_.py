@@ -2,6 +2,10 @@ import bpy
 import os
 import glob
 
+import sys
+argv = sys.argv
+argv = argv[argv.index("--") + 1:] # get all args after "--"
+
 # Clear scene
 context = bpy.context
 scene = context.scene
@@ -9,7 +13,7 @@ scene = context.scene
 bpy.data.objects.remove(bpy.data.objects["Cube"]) # Remove startup Cube
 
 # Model directory/files
-blend_file = "resources/Models.blend"
+blend_file = argv[0]
 section = "\\Action\\"
 
 Gamedata = bpy.data.collections.new("Gamedata")

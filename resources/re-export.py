@@ -2,6 +2,9 @@ import bpy
 import os
 import glob
 
+import sys
+argv = sys.argv
+argv = argv[argv.index("--") + 1:] # get all args after "--"
 
 # Clear scene
 context = bpy.context
@@ -14,8 +17,8 @@ for collection in bpy.data.collections:
 	bpy.data.collections.remove(collection)
 
 # Model directory/files
-model_dir = 'Models/FurniturePack/OBJ/'
-model_files = glob.glob(model_dir + "*.obj")
+model_dir = argv[0] + "/OBJ"
+model_files = glob.glob(model_dir + "/*.obj")
 
 # Reprocess obj files
 for f in model_files:
