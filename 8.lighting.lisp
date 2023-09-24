@@ -3,7 +3,7 @@
 ; initialize OpenGL
 (import (lib gl-2))
 (gl:set-window-title "lighting")
-(import (lib x11))
+(import (lib GLU))
 
 ; gl global init
 (glShadeModel GL_SMOOTH)
@@ -27,8 +27,8 @@
 (print "Lights: " Lights)
 
 ; scene objects
-(define Objects (vector->list (scene 'Objects)))
-(print "Objects: " Objects)
+(define Objects
+   (vector->list (scene 'Objects)))
 
 ; let's rotate ceilingFan
 (attach-entity-handler "ceilingFan" (lambda (entity)
@@ -37,29 +37,9 @@
       'rotation [0 0 (+ (mod (* ss 10) 360) (/ ms 100))]
    })))
 
-; найдем код текстуры дисплея
-(define computer-screen-texture (ref ((ref geometry 1) '|metal.024|) 3))
-; сконфигурируем
-(define dpy (XOpenDisplay #f))
-(define root (XDefaultRootWindow dpy))
-(define SCREENW 1920)
-(define SCREENH 1080)
-
-;; shaders
-(define po (gl:create-program
-"#version 120 // OpenGL 2.1
-   #define gl_WorldMatrix gl_TextureMatrix[7]
-   void main() {
-      gl_Position = gl_ModelViewProjectionMatrix * gl_WorldMatrix * gl_Vertex;
-   }"
-"#version 120 // OpenGL 2.1
-   void main() {
-      // nothing to do
-   }"))
-
 ;; -----------------------
 ; https://learnopengl.com/Getting-started/Coordinate-Systems
-; модели освещения: http://steps3d.narod.ru/tutorials/lighting-tutorial.html
+; http://steps3d.narod.ru/tutorials/lighting-tutorial.html
 
 (define lighting (gl:create-program
    (file->string "shaders/8.lighting.vs")
@@ -103,35 +83,37 @@
       (apply gluLookAt (append location target up)))
 
    ; let's add dynamic light (i want to see dynamic changes of lighting)
-   (define-values (ss ms) (clock))
-   (define ticks (/ (+ ss (/ ms 1000)) 0.1))
+   (define ticks (let* ((ss us (uncons (syscall 96) #f)))
+      (+ ss (/ us #i1000000))))
 
+   ; two flying lightbulbs
    (define lights (append Lights (list
       {
          'type "POINT"
          'color [1 0 0]
          'position [
-            (* 5 (sin (/ ticks 20)))
-            (* 5 (cos (/ ticks 20)))
+            (* 5 (sin (/ ticks #i2)))
+            (* 5 (cos (/ ticks #i2)))
             4
             1]
-      })))
-
-   ; обновим текстурку 
-   (define image (XGetImage dpy root SCREENW 0 SCREENW SCREENH (XAllPlanes) ZPixmap))
-   (define data (bytevector->void* (vptr->bytevector image 100) 16))
-
-   (glBindTexture GL_TEXTURE_2D computer-screen-texture)
-   (glTexImage2D GL_TEXTURE_2D 0 GL_RGB SCREENW SCREENH 0 GL_BGRA GL_UNSIGNED_BYTE data)
-   (XDestroyImage image)
+      }
+      {
+         'type "POINT"
+         'color [0 1 0]
+         'position [
+            (* -5 (sin (/ ticks #i2)))
+            (* -5 (cos (/ ticks #i2)))
+            4
+            1]
+      }
+   )))
 
    ; draw a scene
    (glUseProgram lighting)
    (glUniform1i (glGetUniformLocation lighting "lightsCount") (length lights))
-   (glUniform1i (glGetUniformLocation lighting "tex") 0)
 
    ; define light positions
-   ;(glEnable GL_LIGHTING)
+   ; (glEnable GL_LIGHTING)
    (for-each (lambda (light i)
          (glEnable i)
          ; GL_AMBIENT источника света не учавствует в освещении сцены

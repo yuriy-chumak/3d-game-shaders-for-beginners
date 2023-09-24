@@ -90,20 +90,6 @@
             (fasl-save models filename)
             models)))
 
-   ;; ; тут мы загружаем текстуры в GPU и возвращаем их { текстура . id }
-   ;; (define (load-texures models)
-   ;;    (fold (lambda (textures model)
-   ;;             (fold (lambda (textures material)
-   ;;                      (define map_Kd (ref material 3))
-   ;;                      (if map_Kd
-   ;;                         (put textures map_Kd (SOIL_load_OGL_texture (symbol->string map_Kd) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0))
-   ;;                      else
-   ;;                         textures))
-   ;;                textures
-   ;;                (ref model 1)))
-   ;;       {}
-   ;;       models))
-
    ; generate default texture
    (define white '(0))
    (glGenTextures (length white) white)
@@ -230,6 +216,7 @@
 
    (define (render-scene objects geometry)
       (define models (ref geometry 2))
+      (define handlers (material-handlers))
 
       (for-each (lambda (entity)
             (define name (entity 'name ""))
@@ -253,7 +240,6 @@
             ; draw compiled geometry
             (for-each (lambda (item)
                   (define material (cdr item))
-                  (define handlers (material-handlers))
                   ; do material handler
                   (define handler
                      (handlers (ref material 1) (handlers #false (lambda (material)
@@ -296,8 +282,7 @@
 
    ; materials
    (define (set-default-material-handler handler)
-      (define handlers (material-handlers))
-      (material-handlers (put handlers #false handler)))
+      (material-handlers (put (material-handlers) #false handler)))
 
    (define (attach-material-handler materials handler)
       (for-each (lambda (material)

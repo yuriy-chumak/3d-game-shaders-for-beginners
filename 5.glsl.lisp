@@ -3,6 +3,7 @@
 ; initialize OpenGL
 (import (lib gl-2))
 (gl:set-window-title "glsl.lisp")
+(import (lib GLU))
 
 ; gl global init
 (glShadeModel GL_SMOOTH)
@@ -23,11 +24,12 @@
 
 ; scene lights
 (define Lights (vector->list (scene 'Lights)))
-(print "Lights: " Lights)
+(print "Lights:")
+(for-each (lambda (x) (print "   " x)) Lights)
 
 ; scene objects
-(define Objects (vector->list (scene 'Objects)))
-(print "Objects: " Objects)
+(define Objects
+   (vector->list (scene 'Objects)))
 
 ; We are moving away from the fixed OpenGL pipeline, in which
 ; Model and View matrices are combined into one.
@@ -81,7 +83,7 @@
 
          (define location (object 'location))
          ; let's rotate ceilingFan
-         (define rotation (if (string-eq? (object 'name "") "ceilingFan")
+         (define rotation (if (string-eq? (object 'name "") "Teleporter")
             (let*((ss ms (clock)))
                [0 0 (+ (mod (* ss 10) 360) (/ ms 100))])
             (object 'rotation)))

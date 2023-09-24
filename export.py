@@ -135,7 +135,7 @@ for light in bpy.data.lights:
 # 		})
 
 
-print("json:\n")
+print("writing json...")
 with open('scene.json', 'w') as out:
 	json.dump(data, out)
-print("\ndone")
+print("done.")

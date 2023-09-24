@@ -3,6 +3,7 @@
 ; initialize OpenGL
 (import (lib gl-2))
 (gl:set-window-title "7.render-to-depth-buffer")
+(import (lib GLU))
 
 (import (scene))
 (import (scheme inexact))
@@ -282,7 +283,7 @@ GL_TRIANGLES GL_TRIANGLE_STRIP 18
       'position [
          (* 5 (sin (/ ticks 20)))
          (* 5 (cos (/ ticks 20)))
-         4
+         3
          1] ; 1 for POINT light
    })
 

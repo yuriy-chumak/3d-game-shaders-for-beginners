@@ -3,8 +3,6 @@
 ; initialize OpenGL
 (import (lib gl-1))
 (gl:set-window-title "reference-frames.lisp")
-
-(import (scheme inexact))
 (import (lib GLU))
 
 ; global GL init
@@ -49,16 +47,18 @@
    (define-values (ss ms) (clock))
    (define ticks (/ (+ ss (/ ms 1000)) 0.1))
 
-   (define lights (append Lights (list
-      {
-         'type "POINT"
-         'color [1 0 0]
-         'position [
-            (* 5 (sin (/ ticks 20)))
-            (* 5 (cos (/ ticks 20)))
-            4
-            1]
-      })))
+   ;; ; бегающая лампа
+   ;; (define lights (append Lights (list
+   ;;    {
+   ;;       'type "POINT"
+   ;;       'color [1 0 0]
+   ;;       'position [
+   ;;          (* 5 (sin (/ ticks 20)))
+   ;;          (* 5 (cos (/ ticks 20)))
+   ;;          4
+   ;;          1]
+   ;;    })))
+   (define lights Lights)
 
    ; lights
    (glEnable GL_LIGHTING)
@@ -95,7 +95,7 @@
 
          (define location (object 'location))
          ; let's rotate ceilingFan
-         (define rotation (if (string-eq? (object 'name "") "ceilingFan")
+         (define rotation (if (string-eq? (object 'name "") "Teleporter")
             (let*((ss ms (clock)))
                [0 0 (+ (mod (* ss 10) 360) (/ ms 100))])
             (object 'rotation)))

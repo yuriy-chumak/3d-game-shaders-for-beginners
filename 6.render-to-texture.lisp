@@ -3,6 +3,7 @@
 ; initialize OpenGL
 (import (lib gl-2))
 (gl:set-window-title "render-to-texture.lisp")
+(import (lib GLU))
 
 ; gl global init
 (glShadeModel GL_SMOOTH)
@@ -23,14 +24,15 @@
 
 ; scene lights
 (define Lights (vector->list (scene 'Lights)))
-(print "Lights: " Lights)
+(print "Lights:")
+(for-each (lambda (x) (print "   " x)) Lights)
 
 ; scene objects
-(define Objects (vector->list (scene 'Objects)))
-(print "Objects: " Objects)
+(define Objects
+   (vector->list (scene 'Objects)))
 
 ; let's rotate ceilingFan
-(attach-entity-handler "ceilingFan" (lambda (entity)
+(attach-entity-handler "Teleporter" (lambda (entity)
    (define-values (ss ms) (clock))
    (ff-replace entity {
       'rotation [0 0 (+ (mod (* ss 10) 360) (/ ms 100))]

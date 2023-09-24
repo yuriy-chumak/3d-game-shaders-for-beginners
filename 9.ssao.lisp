@@ -4,6 +4,7 @@
 (import (lib gl-2))
 (gl:set-window-title "ssao.lisp")
 (import (lib soil))
+(import (lib GLU))
 
 ; gl global init
 (glShadeModel GL_SMOOTH)

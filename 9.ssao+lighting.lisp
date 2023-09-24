@@ -4,6 +4,7 @@
 (import (lib gl-2))
 (gl:set-window-title "ssao+lighting.lisp")
 (import (lib soil))
+(import (lib GLU))
 
 ; gl global init
 (glShadeModel GL_SMOOTH)
@@ -40,14 +41,14 @@
 ;; render buffer
 (import (OpenGL EXT framebuffer_object))
 
-; найдем код текстуры дисплея
-(import (lib x11))
-(define computer-screen-texture (ref ((ref geometry 1) '|metal.024|) 3))
-; сконфигурируем
-(define dpy (XOpenDisplay #f))
-(define root (XDefaultRootWindow dpy))
-(define SCREENW 1920)
-(define SCREENH 1080)
+;; ; найдем код текстуры дисплея
+;; (import (lib x11))
+;; (define computer-screen-texture (ref ((ref geometry 1) '|metal.024|) 3))
+;; ; сконфигурируем
+;; (define dpy (XOpenDisplay #f))
+;; (define root (XDefaultRootWindow dpy))
+;; (define SCREENW 1920)
+;; (define SCREENH 1080)
 
 ; texture buffer sizes
 (define TEXW 1024)
@@ -80,6 +81,7 @@
 ; depths producer
 (define depths (gl:create-program
 "#version 120 // OpenGL 2.1
+   __LINE__
    #define gl_ModelMatrix gl_TextureMatrix[7]   // Model matrix
    #define gl_ViewMatrix gl_ModelViewMatrix
    #define gl_ViewProjectionMatrix gl_ModelViewProjectionMatrix
@@ -136,7 +138,7 @@
    uniform float clip_end;
 
    uniform int lightsCount;
-   uniform sampler2D tex;
+   //uniform sampler2D tex;
 
    varying float depth;
    varying vec3 normal;
@@ -190,7 +192,7 @@
 
       vec3 eyeDirection = normalize(-vertex); // in the modelview space eye direction is just inverse of position
 
-      vec4 diffuseTex = gl_Color * texture2D(tex, gl_TexCoord[0].st);
+      vec4 diffuseTex = gl_Color; // * texture2D(tex, gl_TexCoord[0].st);
       vec4 specularTex = diffuseTex; // надо бы брать из материала
       vec4 diffuse  = vec4(0.0, 0.0, 0.0, diffuseTex.a);
       vec4 specular = vec4(0.0, 0.0, 0.0, diffuseTex.a);
@@ -355,7 +357,7 @@
             1]
       })))
    (glUniform1i (glGetUniformLocation ssao+lighting "lightsCount") (length lights))
-   (glUniform1i (glGetUniformLocation ssao+lighting "tex") 0)
+   ;; (glUniform1i (glGetUniformLocation ssao+lighting "tex") 0)
 
    ; define light positions
    ;(glEnable GL_LIGHTING)
@@ -370,13 +372,12 @@
       lights
       (iota (length lights) GL_LIGHT0))
 
-   ; display texture
-   (define image (XGetImage dpy root SCREENW 0 SCREENW SCREENH (XAllPlanes) ZPixmap))
-   (define data (bytevector->void* (vptr->bytevector image 100) 16))
-
-   (glBindTexture GL_TEXTURE_2D computer-screen-texture)
-   (glTexImage2D GL_TEXTURE_2D 0 GL_RGB SCREENW SCREENH 0 GL_BGRA GL_UNSIGNED_BYTE data)
-   (XDestroyImage image)
+   ;; ; display texture
+   ;; (define image (XGetImage dpy root SCREENW 0 SCREENW SCREENH (XAllPlanes) ZPixmap))
+   ;; (define data (bytevector->void* (vptr->bytevector image 100) 16))
+   ;; (glBindTexture GL_TEXTURE_2D computer-screen-texture)
+   ;; (glTexImage2D GL_TEXTURE_2D 0 GL_RGB SCREENW SCREENH 0 GL_BGRA GL_UNSIGNED_BYTE data)
+   ;; (XDestroyImage image)
 
    ; draw just a geometry
    (render-scene Objects geometry)

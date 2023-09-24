@@ -1,7 +1,7 @@
 #version 120 // OpenGL 2.1
 
 uniform int lightsCount;
-uniform sampler2D tex;
+//uniform sampler2D tex;
 
 varying vec4 vertexPosition;
 varying vec4 vertexNormal;
@@ -12,7 +12,7 @@ void main() {
 
 	vec3 eyeDirection = normalize(-vertex); // in the modelview space eye direction is just inverse of position
 
-	vec4 diffuseTex = gl_Color * texture2D(tex, gl_TexCoord[0].st);
+	vec4 diffuseTex = gl_Color; // * texture2D(tex, gl_TexCoord[0].st);
 	vec4 specularTex = diffuseTex; // надо бы брать из материала
 	vec4 diffuse  = vec4(0.0, 0.0, 0.0, diffuseTex.a);
 	vec4 specular = vec4(0.0, 0.0, 0.0, diffuseTex.a);

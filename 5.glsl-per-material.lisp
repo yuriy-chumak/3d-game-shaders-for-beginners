@@ -3,12 +3,13 @@
 ; initialize OpenGL
 (import (lib gl-2))
 (gl:set-window-title "glsl-per-material.lisp")
+(import (lib GLU))
 
 ; gl global init
 (glShadeModel GL_SMOOTH)
 (glEnable GL_DEPTH_TEST)
 
-(glEnable GL_CULL_FACE); GL_BACK
+(glEnable GL_CULL_FACE)
 
 ; scene
 (import (scene))
@@ -23,14 +24,15 @@
 
 ; scene lights
 (define Lights (vector->list (scene 'Lights)))
-(print "Lights: " Lights)
+(print "Lights:")
+(for-each (lambda (x) (print "   " x)) Lights)
 
 ; scene objects
-(define Objects (vector->list (scene 'Objects)))
-(print "Objects: " Objects)
+(define Objects
+   (vector->list (scene 'Objects)))
 
 ; let's rotate ceilingFan
-(attach-entity-handler "ceilingFan" (lambda (entity)
+(attach-entity-handler "Teleporter" (lambda (entity)
    (define-values (ss ms) (clock))
    (ff-replace entity {
       'rotation [0 0 (+ (mod (* ss 10) 360) (/ ms 100))]
@@ -72,40 +74,9 @@
       gl_FragColor = vec4(0,1,0,1);
    }"))
 
-(attach-material-handler '("metalLight.009" "lamp.005" "wood.074")
+(attach-material-handler '("Glass.003")
    (lambda (material)
       (glUseProgram greenify)
-))
-
-(import (scheme inexact))
-(import (otus random!))
-(define blinker (gl:create-program
-"#version 120 // OpenGL 2.1
-   #define gl_ModelMatrix gl_TextureMatrix[7] // our model matrix
-   #define gl_ViewProjectionMatrix gl_ModelViewProjectionMatrix
-
-   void main() {
-      gl_Position = gl_ViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
-      gl_FrontColor = gl_Color;
-   }"
-"#version 120 // OpenGL 2.1
-   uniform float brightness;
-   void main() {
-      gl_FragColor = gl_Color * vec4(brightness,brightness,brightness,1);
-   }"))
-
-(attach-material-handler '("metal.022")
-   (lambda (material entity)
-      (define ddx (if (string-eq? (entity 'name "") "laptop") 237 311))
-      (define ddy (if (string-eq? (entity 'name "") "laptop") 111 556))
-
-      (define-values (ss ms) (clock))
-      (glUseProgram blinker)
-      (glUniform1f (glGetUniformLocation blinker "brightness")
-         (+ 0.6
-            (* (sin (/ ms ddx)) (sin (/ ms ddx))
-               (cos (/ ms ddy))
-               0.2)))
 ))
 
 ; draw
