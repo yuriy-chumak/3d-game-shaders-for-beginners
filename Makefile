@@ -1,18 +1,11 @@
-all: scene.json
+all: scene.gltf
 
-resources/Models.blend:
-	$(MAKE) -C resources
-	# cleanup the models cache
-	$(MAKE) clean
+$(shell [ -s stylized_mangrove_greenhouse.zip ] || rm -rf stylized_mangrove_greenhouse.zip)
 
-scene_.blend: resources/Models.blend
-	blender -b -P scene_.py -- "$^"
+# https://sketchfab.com/3d-models/stylized-mangrove-greenhouse-4ad533f838f44fa583683ab7939c6aa1
+stylized_mangrove_greenhouse.zip:
+	curl -LOk "https://github.com/yuriy-chumak/3d-game-shaders-for-beginners/releases/download/1.0/stylized_mangrove_greenhouse.zip"
 
-scene.blend: scene_.blend
-	@if [ ! -f $^ ]; then cp $^ $@; fi
+scene.gltf: stylized_mangrove_greenhouse.zip
+	unzip -d . $^
 
-scene.json: scene.blend export.py
-	blender -b scene.blend -P export.py
-
-clean:
-	rm -f cache.bin
