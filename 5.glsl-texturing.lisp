@@ -15,15 +15,16 @@
 (import (scene))
 
 ; shader program
-(define colorize (gl:create-program
+(define textured (gl:create-program
 "#version 110 // OpenGL 2.0
    void main() {
       gl_Position = ftransform();
-      gl_FrontColor = vec4(0, 1, 0, 1);
+      gl_TexCoord[0] = gl_MultiTexCoord0;
    }"
 "#version 110 // OpenGL 2.0
+   uniform sampler2D tex;
    void main() {
-      gl_FragColor = gl_Color;
+      gl_FragColor = texture2D(tex, gl_TexCoord[0].st);
    }"))
 
 ; draw
@@ -50,5 +51,5 @@
    (apply gluLookAt (append location target up))
 
    ; draw the model with colors
-   (glUseProgram colorize)
+   (glUseProgram textured)
    (render-scene scene) ))

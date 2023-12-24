@@ -8,4 +8,5 @@ stylized_mangrove_greenhouse.zip:
 
 scene.gltf: stylized_mangrove_greenhouse.zip
 	unzip -d . $^
-
+	# remove "glowing" bilboards near lamps (we will create own ones)
+	sed -i '/"material": 17,/d' scene.gltf

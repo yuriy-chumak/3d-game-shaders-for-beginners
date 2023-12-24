@@ -4,7 +4,7 @@
 This is a try to translate and extend an [lettier/3d-game-shaders-for-beginners](https://github.com/lettier/3d-game-shaders-for-beginners) articles to the Ol (Otus Lisp).
 
 *"Interested in adding
-~~textures~~,
+textures,
 lighting,
 shadows,
 normal maps,
@@ -22,7 +22,7 @@ I've chosen the fabulous ~~Panda3D game engine~~ Otus Lisp, OpenGL and the OpenG
 So if that is your stack, then you'll also get the benefit of learning how to use these
 shading techniques with ~~Panda3D~~ Ol and OpenGL specifically."*
 
-![](https://i.imgur.com/Ck7qf3D.png)
+![](https://i.imgur.com/Givxvik.png)
 
 ## Table Of Contents
 
@@ -33,16 +33,18 @@ shading techniques with ~~Panda3D~~ Ol and OpenGL specifically."*
 - :heavy_check_mark: [Running The Demo](sections/3.running-the-demo.md)
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/running-the-demo.md))
 
-- :heavy_check_mark: [Reference Frames](sections/4.reference-frames.md)
+- ~~:heavy_check_mark: [Reference Frames](sections/4.reference-frames.md)~~
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/reference-frames.md))
 - :heavy_check_mark: [GLSL](sections/5.glsl.md)
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/glsl.md))
 - :heavy_check_mark: [Texturing](sections/5.glsl-texturing.md)
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/texturing.md))
-- :heavy_check_mark: [Render To Texture](sections/6.render-to-texture.md)
-    ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/render-to-texture.md))
 
-- :heavy_check_mark: [Lighting](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/lighting.md)
+- :heavy_check_mark: [Lighting](sections/6.lighting.md)
+    ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/lighting.md))
+
+- :heavy_multiplication_x: [Render To Texture](sections/6.render-to-texture.md)
+    ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/render-to-texture.md))
 
 - :heavy_multiplication_x: [Blinn-Phong](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/blinn-phong.md)
 - :heavy_multiplication_x: [Fresnel Factor](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/fresnel-factor.md)
@@ -73,7 +75,7 @@ shading techniques with ~~Panda3D~~ Ol and OpenGL specifically."*
 ## Copyright
 
 * Original articles "3D Game Shaders For Beginners" is (C) 2019 [David Lettier](https://github.com/lettier/3d-game-shaders-for-beginners).
-  No any part of these articles is included.
-* "LowPoly Modular Sci-Fi Environments" 3d-models (c) [quaternius, OpenGameArt](https://opengameart.org/content/lowpoly-modular-sci-fi-environments), CC0 Public Domain.
-  Models are not included, but can be automatically downloaded and processed using the 'make' tool.
-* These articles and source codes are (c) of me - Y.C., [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html).
+  No any part of these articles are included.
+* As a model source have been used [Stylized Mangrove Greenhouse](https://sketchfab.com/3d-models/stylized-mangrove-greenhouse-4ad533f838f44fa583683ab7939c6aa1)
+  by borsh_and licensed under [CC-BY-4.0](http://creativecommons.org/licenses/by/4.0/).
+* These articles and source codes are (c) of me - Y.C. under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html).
