@@ -13,6 +13,7 @@
 
 (begin
    (setq vref vector-ref)
+   (import (owl io))
 
    (define render-scene
       (define (render-scene scene test)
@@ -25,9 +26,9 @@
          (define images (scene 'images))
 
          ; current shader program
-         (define program (let ((id '(0)))
+         (define program (let ((id (box 0)))
             (glGetIntegerv GL_CURRENT_PROGRAM id)
-            (car id)))
+            (unbox id)))
 
          ; render scene tree
          (let walk ((i 0))

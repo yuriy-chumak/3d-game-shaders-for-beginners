@@ -1,5 +1,8 @@
 #!/usr/bin/env ol
-(import (lib gl-2))
+(syscall 1014 (c-string "__NV_PRIME_RENDER_OFFLOAD") (c-string "1") #true)
+(syscall 1014 (c-string "__GLX_VENDOR_LIBRARY_NAME") (c-string "nvidia") #true)
+
+(import (lib gl 2))
 (gl:set-window-title "5. GLSL")
 
 ; global GL init
@@ -15,11 +18,14 @@
 (import (file glTF))
 (define scene (read-glTF-file "scene.gltf"))
 
+(import (OpenGL glTF))
+(define scene (compile scene))
+
 ; helper functions
 (import (scene))
 
 ; lighting setup
-(import (owl math fp))
+(import (scheme inexact))
 (glLightModelfv GL_LIGHT_MODEL_AMBIENT '(0.1 0.1 0.1 1))
 
 ; shader program
@@ -106,6 +112,11 @@
 (glPolygonMode GL_FRONT_AND_BACK GL_FILL)
 (define quadric (gluNewQuadric))
 
+(define time #i0)
+(gl:set-calculator (lambda ()
+   (vm:set! time (* #i3.0
+      (/ (mod (time-ms) 62831) #i10000)))
+))
 
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
@@ -120,9 +131,21 @@
       (/ (gl:get-window-width) (gl:get-window-height))
       0.1 1000) ; near - far
 
-   (define target '(0 0 0))
-   (define location '(0 6 30))
-   (define up '(0 4 0))
+   ;; (define target '(0 0 0))
+   ;; (define location '(0 6 30))
+   ;; (define up '(0 4 0))
+
+   (define scale #i1)
+   (define radius (* scale 25))
+   (define dx #i-0.46)
+   (define dy (* scale 8))
+
+   (define location (list
+      (+ dx (* radius (cos time)))
+      (+ dy (* scale 4))
+      (* radius (sin time))))
+   (define target (list dx 0 0))
+   (define up '(0 1 0))
 
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
@@ -136,18 +159,18 @@
          'type "POINT"
          'color [1 1 1]
          'position [
-            (* radius (fsin ticks))
+            (* radius (sin ticks))
             4
-            (* radius (fcos ticks))
+            (* radius (cos ticks))
             1]
       }
       {
          'type "POINT"
          'color [0 1 0]
          'position [
-            (* (- radius) (fsin ticks))
+            (* (- radius) (sin ticks))
             4
-            (* (- radius) (fcos ticks))
+            (* (- radius) (cos ticks))
             1]
       }
    ))
@@ -161,6 +184,8 @@
          (glLightfv i GL_POSITION (light 'position)))
       Lights
       (iota (length Lights) GL_LIGHT0))
+
+   (glEnable GL_BLEND)
 
    ; draw the OPAQUE geometry details
    (glUseProgram lighting)
@@ -187,7 +212,7 @@
    (glMatrixMode GL_MODELVIEW)
    (for-each (lambda (light i)
          ; рисуем только "точечные" источники света:
-         (when (eq? (ref (light 'position) 4) 1)
+         (when (= (ref (light 'position) 4) 1)
             (glColor3fv (light 'color))
             (glPushMatrix)
             (glTranslatef (ref (light 'position) 1)
@@ -197,6 +222,6 @@
             (glPopMatrix)))
       Lights
       (iota (length Lights)))
-   (glEnable GL_BLEND)
 
-   (render-scene scene) ))
+   ;; (render-scene scene)
+ ))
